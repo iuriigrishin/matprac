@@ -1,161 +1,76 @@
-#include <raylib.h>
+#include <algorithm>
 #include <cstdio>
+#include <string>
 #include "core/grid.hpp"
 #include "core/solver.hpp"
-#include "render/renderer.hpp"
-#include "scenes/block_melt.hpp"
-#include "scenes/stefan_1d.hpp"
-#include "export/csv_writer.hpp"
-#include "scenes/snowflake.hpp"
-#include "scenes/icicle.hpp"
+#include "core/materials.hpp"
+#include "scenes/scene.hpp"
+#include "scenes/laser_pulse.hpp"
+#include "export/vtk_writer.hpp"
+#include "export/probe_writer.hpp"
 
 int main() {
-    // parametersя
-    constexpr int    GRID_SIZE       = 100;
-    constexpr double DOMAIN_SIZE     = 0.005;
-    constexpr int    WINDOW_SIZE     = 800;
-    constexpr double DT              = 5e-5;
-    constexpr int    STEPS_PER_FRAME = 100;
-    constexpr int    CSV_INTERVAL    = 50;
+  // MESH
+  // Размер пятна 0.5 мм; коробка 2x2 мм, 50 мкм глубина
+  // 64x64x32 узла
+  const int Nx = 64;
+  const int Ny = 64;
+  const int Nz = 32;
+  const double Lx = 2e-3;
+  const double Ly = 2e-3;
+  const double Lz = 5e-5;
+ 
+  sim::SimMaterial mat;
 
-    // initinilization
-    sim::SimMaterial mat;
-    Grid grid(GRID_SIZE, DOMAIN_SIZE, mat);
-
-    BlockMelt scene_block; // для валидации
-    StefanValidation scene_stefan;
-    Scene* scene = &scene_stefan;
-    scene->init(grid);
-
-
-    Snowflake scene_snow;
-
-    Icicle scene_icicle;
-    // для валидации: левая стенка фиксирована, остальные адиабатические
-    Solver solver(grid, BoundaryType::Fixed);
-    Renderer renderer(WINDOW_SIZE);
-    CsvWriter csv("results/front.csv");
-
-    InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Stefan Problem");
-    SetTargetFPS(60);
-
-    bool recording = false;
-    int frame_count = 0;
-    bool paused = false;
-    while (!WindowShouldClose()) {
-        if (IsKeyPressed(KEY_SPACE)) paused = !paused;
-
-        if (IsKeyPressed(KEY_ONE)) {
-            scene = &scene_block;
-            scene->init(grid);
-            solver = Solver(grid, BoundaryType::Adiabatic);
-            paused = false;
-        }
-        if (IsKeyPressed(KEY_TWO)) {
-            scene = &scene_stefan;
-            scene->init(grid);
-            solver = Solver(grid, BoundaryType::Fixed);
-            paused = false;
-        }
-        if (IsKeyPressed(KEY_R)) {
-            scene->init(grid);
-            solver = Solver(grid, BoundaryType::Fixed);
-            paused = false;
-        }
-
-        if (IsKeyPressed(KEY_THREE)) {
-            scene = &scene_snow;
-            scene->init(grid);
-            solver = Solver(grid, BoundaryType::Adiabatic);
-            paused = false;
-        }
-
-        if (IsKeyPressed(KEY_FOUR)) {
-            scene = &scene_icicle;
-            scene->init(grid);
-            solver = Solver(grid, BoundaryType::Fixed);
-            paused = false;
-        }
-
-        if (!paused) {
-            for (int s = 0; s < STEPS_PER_FRAME; ++s) {
-                solver.step(grid, DT);
-
-                // записываем фронт в CSV
-                if (solver.steps() % CSV_INTERVAL == 0) {
-                    csv.write_front(grid, solver.time());
-                }
-            }
-        }
-
-        // левая кнопка мыши — горячий источник
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-            Vector2 pos = GetMousePosition();
-            int j = static_cast<int>(pos.x / (WINDOW_SIZE / GRID_SIZE));
-            int i = static_cast<int>(pos.y / (WINDOW_SIZE / GRID_SIZE));
-            int radius = 3;
-            for (int di = -radius; di <= radius; ++di) {
-                for (int dj = -radius; dj <= radius; ++dj) {
-                    int ni = i + di, nj = j + dj;
-                    if (ni >= 0 && ni < GRID_SIZE && nj >= 0 && nj < GRID_SIZE) {
-                        if (di*di + dj*dj <= radius*radius) {
-                            grid.H(ni, nj) = grid.H_from_T_liquid(80.0);
-                        }
-                    }
-                }
-            }
-        }
-
-        // правая кнопка мыши — холодный источник
-        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-            Vector2 pos = GetMousePosition();
-            int j = static_cast<int>(pos.x / (WINDOW_SIZE / GRID_SIZE));
-            int i = static_cast<int>(pos.y / (WINDOW_SIZE / GRID_SIZE));
-            int radius = 3;
-            for (int di = -radius; di <= radius; ++di) {
-                for (int dj = -radius; dj <= radius; ++dj) {
-                    int ni = i + di, nj = j + dj;
-                    if (ni >= 0 && ni < GRID_SIZE && nj >= 0 && nj < GRID_SIZE) {
-                        if (di*di + dj*dj <= radius*radius) {
-                            grid.H(ni, nj) = grid.H_from_T_solid(-30.0);
-                        }
-                    }
-                }
-            }
-        }
-
-        BeginDrawing();
-        ClearBackground(BLACK);
-        renderer.draw(grid);
-
-        char info[128];
-        std::snprintf(info, sizeof(info),
-            "%s | t = %.6f s | step %d | %s",
-            scene->name().c_str(),
-            solver.time(),
-            solver.steps(),
-            paused ? "PAUSED" : "RUNNING"
-        );
-        DrawText(info, 10, 10, 18, WHITE);
-        DrawText("[1][2] scenes  [SPACE] pause  [R] reset  [F] record  [LMB] heat  [RMB] freeze", 10, WINDOW_SIZE - 30, 14, GRAY);
-        DrawFPS(WINDOW_SIZE - 90, 10);
-
-        EndDrawing();
-        if (IsKeyPressed(KEY_F)) {
-            recording = !recording;
-            if (recording) frame_count = 0;
-        }
-
-        if (recording) {
-            char path[128];
-            std::snprintf(path, sizeof(path), "results/frame_%05d.png", frame_count);
-            TakeScreenshot(path);
-            frame_count++;
-        }
+  Grid grid(Nx, Ny, Nz, Lx, Ly, Lz, mat);
+ 
+  // SCENE
+  LaserPulse::Params lp;
+  lp.I0       = 1e12;
+  lp.tau_fwhm = 10e-9;
+  lp.r_spot   = 5e-4;
+  lp.T_init   = 300.0;
+  lp.t_center = 3e-8;
+ 
+  LaserPulse scene(lp);
+  scene.init(grid);
+  scene.bind_material(mat);
+ 
+  // SOLVER
+  double dt = Solver::stable_dt(grid, 0.4);
+  std::printf("dt = %.3e s\n", dt);
+  std::fflush(stdout);
+ 
+  Solver solver(grid, scene.lateral_bc(), scene.laser_bc());
+ 
+  // SIMULATION
+  const double T_total    = 2e-7;
+  const int    n_steps    = static_cast<int>(T_total / dt) + 1;
+  const int    n_dumps    = 100;
+  const int    dump_every = std::max(1, n_steps / n_dumps);
+  std::printf("n_steps = %d, dump_every = %d\n", n_steps, dump_every);
+  std::fflush(stdout);
+ 
+  // WRITERS
+  VtkWriter   vtk("results/laser", grid);
+  ProbeWriter probe_center("results/laser_center.csv");
+ 
+  vtk.write_frame(grid, solver.time());
+  probe_center.write_point(grid, solver.time(), Nx / 2, Ny / 2, 0);
+ 
+  // SOLVER CYCLE
+  for (int s = 0; s < n_steps; ++s) {
+    solver.step(grid, dt);
+    if ((s + 1) % dump_every == 0) {
+      vtk.write_frame(grid, solver.time());
+      probe_center.write_point(grid, solver.time(), Nx / 2, Ny / 2, 0);
+      std::printf("step %d / %d, t = %.3e s, T_center = %.1f K\n",
+                  s + 1, n_steps, solver.time(),
+                  grid.T(Nx / 2, Ny / 2, 0));
+      std::fflush(stdout);
     }
-
-    CsvWriter::dump_temperature(grid, "results/temperature.csv");
-
-    CloseWindow();
-    return 0;
+  }
+  vtk.finalize();
+  std::printf("Done. ParaView: open results/laser.pvd\n");
+  return 0;
 }
