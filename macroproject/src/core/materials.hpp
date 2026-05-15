@@ -8,11 +8,11 @@ struct SimMaterial {
   double L         = 397000.0;    // удельная теплота плавления, Дж/кг
   double T_melt    = 933.47;      // температура плавления, К
   double rho       = 2700.0;      // плотность, кг/м^3
-  double T_ref     = 300.0;       // опорная температура, К (для пересчёта H<->T)
+  double T_ref     = 300.0;       // опорная температура, К
 
   double R         = 0.3;       // albedo
   double delta_opt  = 1e-8;      // length of optical penetration
-  
+
   double E_young   = 70e9;        // модуль Юнга, Па
   double nu        = 0.33;        // коэффициент Пуассона
   double alpha_T   = 23.1e-6;     // коэффициент линейного теплового расширения, 1/К
