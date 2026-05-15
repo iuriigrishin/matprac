@@ -1,0 +1,48 @@
+\documentclass[12pt, a4paper]{article}
+
+\input{sections/preamble} 
+
+
+\begin{document}
+
+
+
+\input{sections/titlepage}
+
+
+\tableofcontents
+
+\clearpage
+
+\part*{I.\quad Лабораторные работы}
+\addcontentsline{toc}{part}{I. Лабораторные работы}
+\setcounter{section}{0}
+
+\input{sections/lab1}
+\clearpage
+
+\input{sections/lab2}
+\clearpage
+
+\input{sections/lab3}
+\clearpage
+
+\part*{II.\quad Микропроект}
+\addcontentsline{toc}{part}{II. Микропроект}
+\setcounter{section}{0}
+
+\section{Микропроект: задача Стефана (таяние снежинки)}
+\input{sections/microproject}
+\clearpage
+
+\part*{III.\quad Макропроект}
+\addcontentsline{toc}{part}{III. Макропроект}
+\setcounter{section}{0}
+
+\section{Макропроект: тепловой блок задачи LSP}
+\input{sections/macroproject}
+\clearpage
+
+\input{sections/bibliography}
+
+\end{document}
