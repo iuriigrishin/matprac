@@ -1,4 +1,4 @@
-\section{Лабораторная работа \textnumero{}2: Paraview}
+\section{Лабораторная работа \textnumero{}2: ParaView}
 
 \subsection{Цель работы}
 
@@ -67,7 +67,7 @@ void PointHit(Node &node, double t) {
 }
 \end{lstlisting}
 
-\subsubsection{Запись снапшотов в VTK}
+\subsubsection{Запись кадров в VTK}
 
 Каждый кадр записывается в отдельный \texttt{.vtu}-файл:
 
@@ -88,7 +88,7 @@ writer->SetFileName(fileName.c_str());
 writer->Write();
 \end{lstlisting}
 
-\subsection{Параметры симуляции}
+\subsection{Параметры расчёта}
 
 \begin{table}[H]
   \centering
@@ -101,7 +101,7 @@ writer->Write();
     $v_0$      & Амплитуда                 & $15.0$ \\
     $\sigma$   & Ширина гауссова импульса  & $3.0$ \\
     $\Delta t$ & Шаг по времени            & $0.05$ с \\
-    $T$        & Длительность симуляции    & $20.0$ с \\
+    $T$        & Длительность расчёта       & $20.0$ с \\
     $(x_0, y_0, z_0)$ & Источник          & $(2, 0, 85)$ \\
     \bottomrule
   \end{tabular}
@@ -109,13 +109,13 @@ writer->Write();
 
 \subsection{Визуализация в ParaView}
 
-Используя ParaView, была создана анимация, показывающая распространение
-ударной волны внутри карандаша.
+В ParaView была создана анимация распространения ударной волны внутри
+карандаша.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.8\linewidth]{img/lab2/pencil.png}
-  \caption{Кадр из анимации, показывающий распространение ударной волны.}
+  \caption{Кадр из анимации распространения ударной волны.}
 \end{figure}
 
 См. \href{https://www.youtube.com/watch?v=DhCUMZFyOzg}{Видео на YouTube}.
@@ -124,13 +124,13 @@ writer->Write();
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.8\linewidth]{img/lab2/cut.png}
-  \caption{Сечение вдоль оси карандаша, показывающее распространение ударной волны.}
+  \caption{Сечение вдоль оси карандаша с полем ударной волны.}
 \end{figure}
 
 \subsection{Выводы}
 
-Реализован полный цикл расчёта и визуализации нестационарного процесса:
+Реализован цикл расчёта и визуализации нестационарного процесса:
 загрузка STL-сетки через gmsh, аналитический расчёт поля волны с учётом
-отражений, запись серии \texttt{.vtu}-снапшотов и визуализация в ParaView.
+отражений, запись серии \texttt{.vtu}-кадров и визуализация в ParaView.
 Использование неструктурированной сетки позволило корректно передать
 геометрию объекта произвольной формы.
