@@ -44,10 +44,10 @@ int main() {
   Solver solver(grid, scene.lateral_bc(), scene.laser_bc());
  
   // SIMULATION
-  const double T_total    = 2e-7;
+  const double T_total    = 1e-6;
   const int    n_steps    = static_cast<int>(T_total / dt) + 1;
-  const int    n_dumps    = 100;
-  const int    dump_every = std::max(1, n_steps / n_dumps);
+  const double dump_dt    = 2e-9;
+  const int    dump_every = std::max(1, static_cast<int>(dump_dt / dt));
   std::printf("n_steps = %d, dump_every = %d\n", n_steps, dump_every);
   std::fflush(stdout);
  
